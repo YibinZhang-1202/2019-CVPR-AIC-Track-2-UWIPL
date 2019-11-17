@@ -1,0 +1,10 @@
+aic19-track2-reid
+CarKeypoints/model.t7
+CarKeypoints/keypoint-query.txt
+CarKeypoints/keypoint-test.txt
+CarKeypoints/keypoint-train.txt
+Video-Person-ReID/log-test
+Video-Person-ReID/log
+venv/
+
+

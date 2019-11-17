@@ -1,0 +1,84 @@
+==========
+Args:Namespace(arch='resnet50ta_surface_nu', aug_rot=False, augf_surface=False, bstri=False, cluster_gallery=False, dataset='aictrack2', eval_step=50, evaluate=True, evaluate_multiple=False, feature_dir='./feature', feature_only=False, gamma=0.1, gpu_devices='1', height=224, htri_only=False, load_feature=False, lr=0.0003, margin=0.3, max_epoch=800, metadata_model='v2m100', metas='0,1,2', num_instances=4, pool='avg', pretrained_model='log/ta_surface_nu_checkpoint_ep300.pth.tar', pretrained_model_folder='log/', print_freq=40, re_ranking=True, sample_replace=False, save_dir='log-test', save_step=50, seed=1, seq_len=4, start_epoch=0, stepsize=200, test_batch=1, train_batch=16, use_cpu=False, use_small_dataset=False, use_surface=True, visualize_ranks=False, weight_decay=0.0005, width=224, workers=0)
+==========
+Currently using GPU 1
+Initializing dataset aictrack2
+Note: if root path is changed, the previously generated json files need to be re-generated (so delete them first)
+=> Automatically generating split (might take a while for the first time, have a coffe)
+Processing '../aic19-track2-reid/image_train_deepreid' with 333 person identities
+Saving split to ../split_train.json
+=> Automatically generating split (might take a while for the first time, have a coffe)
+Processing '../aic19-track2-reid/image_train_deepreid' with 333 person identities
+Saving split to ../split_train_orig.json
+=> Automatically generating split (might take a while for the first time, have a coffe)
+Processing '../aic19-track2-reid/image_query_deepreid' with 1052 person identities
+Saving split to ../split_query.json
+=> Automatically generating split (might take a while for the first time, have a coffe)
+Processing '../aic19-track2-reid/image_test_deepreid' with 798 person identities
+Saving split to ../split_gallery.json
+=> aic19-track2-reid loaded
+Dataset statistics:
+  -------------------------------------------
+  subset   | # ids | # tracklets | # cameras
+  -------------------------------------------
+  train    |   333 |        1876 |        36
+  query    |  1052 |        1052 |         1
+  gallery  |   798 |         798 |         1
+  -------------------------------------------
+  number of images per tracklet: 1 ~ 58, average 14.59
+  -------------------------------------------
+Initializing model: resnet50ta_surface_nu
+Loaded checkpoint from 'log/ta_surface_nu_checkpoint_ep300.pth.tar'
+- start_epoch: 299
+- rank1: 0.871672987938
+Model size: 49.92045M
+Evaluate only
+q_metadatas.shape = (1052, 46)
+Extracted features for query set, obtained 1052-by-2048 matrix
+g_metadatas.shape = (798, 46)
+Extracted features for gallery set, obtained 798-by-2048 matrix
+metas: [0, 1, 2]
+metadata_prob_ranges: [(0, 7), (7, 37), (37, 46)]
+computing original distance
+Before re-ranking
+Computing CMC, mAP and matches_imgids - top 100
+Results ----------
+mAP: 0.1%
+CMC curve
+Rank-1  : 0.0%
+Rank-5  : 0.0%
+Rank-10 : 0.0%
+Rank-20 : 0.1%
+------------------
+Run re-ranking
+now try different k1, k2 and lambda_value
+k1 =  4
+k2 =  4
+lambda_value =  0.5
+r_metadata =  0.2
+starting re_ranking
+after re-ranking, the final_dist.shape is:  (1052, 798)
+Computing CMC, mAP and matches_imgids after re-ranking - top 100
+after re-ranking Results ----------
+after re-ranking: mAP: 0.2%
+after re-ranking: CMC curve
+after re-ranking: Rank-1  : 0.1%
+after re-ranking: Rank-5  : 0.1%
+after re-ranking: Rank-10 : 0.1%
+after re-ranking: Rank-20 : 0.1%
+------------------
+new max_mAP
+
+
+right now the max_mAP is:  0.0022220303415344074
+
+
+and the correspondding cmc[0] is:  0.0012531328
+------------------
+
+
+
+
+overall the max_mAP is:  0.0022220303415344074
+
+

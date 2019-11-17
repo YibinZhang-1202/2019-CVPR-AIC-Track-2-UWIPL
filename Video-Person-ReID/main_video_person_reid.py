@@ -481,7 +481,7 @@ def test(model, queryloader, galleryloader, pool, use_gpu, dataset, epoch, ranks
                 metadatas.resize_(50, s, d_m)
                 metadatas = metadatas.view(50*s, -1)
                 #metadatas = Variable(metadatas, volatile=True)
-                
+
 
             features = torch.mean(features, 0)
             features = features.data.cpu()
@@ -795,7 +795,7 @@ def evaluate_feature(qf, gf, q_metadatas, g_metadatas, q_pids, g_pids, q_camids,
     if args.metadata_model:
         #confusion_mats_obj = np.load('./metadata/cm_%s.npy'%args.metadata_model, encoding='latin1')
         confusion_file = './metadata/cm_%s_normalized.npy'%args.metadata_model
-        confusion_mats_obj = np.load(confusion_file, encoding='latin1')
+        confusion_mats_obj = np.load(confusion_file, encoding='latin1', allow_pickle=True)
         if args.metadata_model[:2] == 'v1': 
             default_metadata_prob_ranges = [(0,6), (6,18), (18,26)]
             confusion_mats = dict()
@@ -880,41 +880,41 @@ def evaluate_feature(qf, gf, q_metadatas, g_metadatas, q_pids, g_pids, q_camids,
     #distmat += 1000 * compute_metadata_distance_hard(qf, gf, metadata_prob_ranges)
     ##########################################
 
-    print('Before re-ranking')
-    print("Computing CMC, mAP and matches_imgids - top 100")
-    distmat = original_dist[0:query_num, query_num:all_num]
-    cmc, mAP, matches_imgids, matches_imgids_FP, matches_gt_pred = evaluate_imgids(distmat, q_pids, g_pids, q_camids, g_camids, q_imgids, g_imgids, 50, 100)
-    print("Results ----------")
-    print("mAP: {:.1%}".format(mAP))
-    print("CMC curve")
-    for r in ranks:
-        print("Rank-{:<3}: {:.1%}".format(r, cmc[r - 1]))
-    print("------------------")
-    if aggregate_writer is not None:
-        aggregate_writer.writerow({'epoch': str(epoch+1), 'metadata_prob_ranges': '', 'k': str(k), 'lr': str(lr), 'niter': str(niter), 'r_metadata': '', 'k1': '', 'k2': '', 'lambda_value': '', 'mAP': str(mAP), 'Rank-1': str(cmc[0]), 'Rank-5': str(cmc[4]), 'Rank-10': str(cmc[9]), 'Rank-20': str(cmc[19])})
-
-    # dump txt result
-    dump_matches_imgids(osp.join(args.save_dir, 'dist_%04d' % (epoch + 1)), matches_imgids)
-    dump_matches_imgids(osp.join(args.save_dir, 'dist_%04d_FP' % (epoch + 1)), matches_imgids_FP)
-    dump_query_result(osp.join(args.save_dir, 'track2.txt_%04d' % (epoch + 1)), matches_imgids)
-
-    # visualization
-    if args.visualize_ranks:
-        tracklets_query = []
-        for i in range(len(q_imgpaths)):
-            img_paths = q_imgpaths[i]
-            pid = q_pids[i]
-            camid = q_camids[i]
-            tracklets_query.append((img_paths, pid, camid))
-        tracklets_gallery = []
-        for i in range(len(g_imgpaths)):
-            img_paths = g_imgpaths[i]
-            pid = g_pids[i]
-            camid = g_camids[i]
-            tracklets_query.append((img_paths, pid, camid))
-        visualize_ranked_results(
-            distmat, (tracklets_query, tracklets_gallery),
-            save_dir=osp.join(args.save_dir, 'ranked_results_%04d' % (epoch + 1)), topk=20)  # TH
+    # print('Before re-ranking')
+    # print("Computing CMC, mAP and matches_imgids - top 100")
+    # distmat = original_dist[0:query_num, query_num:all_num]
+    # cmc, mAP, matches_imgids, matches_imgids_FP, matches_gt_pred = evaluate_imgids(distmat, q_pids, g_pids, q_camids, g_camids, q_imgids, g_imgids, 50, 100)
+    # print("Results ----------")
+    # print("mAP: {:.1%}".format(mAP))
+    # print("CMC curve")
+    # for r in ranks:
+    #     print("Rank-{:<3}: {:.1%}".format(r, cmc[r - 1]))
+    # print("------------------")
+    # if aggregate_writer is not None:
+    #     aggregate_writer.writerow({'epoch': str(epoch+1), 'metadata_prob_ranges': '', 'k': str(k), 'lr': str(lr), 'niter': str(niter), 'r_metadata': '', 'k1': '', 'k2': '', 'lambda_value': '', 'mAP': str(mAP), 'Rank-1': str(cmc[0]), 'Rank-5': str(cmc[4]), 'Rank-10': str(cmc[9]), 'Rank-20': str(cmc[19])})
+    #
+    # # dump txt result
+    # dump_matches_imgids(osp.join(args.save_dir, 'dist_%04d' % (epoch + 1)), matches_imgids)
+    # dump_matches_imgids(osp.join(args.save_dir, 'dist_%04d_FP' % (epoch + 1)), matches_imgids_FP)
+    # dump_query_result(osp.join(args.save_dir, 'track2.txt_%04d' % (epoch + 1)), matches_imgids)
+    #
+    # # visualization
+    # if args.visualize_ranks:
+    #     tracklets_query = []
+    #     for i in range(len(q_imgpaths)):
+    #         img_paths = q_imgpaths[i]
+    #         pid = q_pids[i]
+    #         camid = q_camids[i]
+    #         tracklets_query.append((img_paths, pid, camid))
+    #     tracklets_gallery = []
+    #     for i in range(len(g_imgpaths)):
+    #         img_paths = g_imgpaths[i]
+    #         pid = g_pids[i]
+    #         camid = g_camids[i]
+    #         tracklets_query.append((img_paths, pid, camid))
+    #     visualize_ranked_results(
+    #         distmat, (tracklets_query, tracklets_gallery),
+    #         save_dir=osp.join(args.save_dir, 'ranked_results_%04d' % (epoch + 1)), topk=20)  # TH
 
     # re-ranking
     if args.re_ranking and args.metadata_model:

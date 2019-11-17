@@ -31,15 +31,15 @@ class AICityTrack2(BaseVideoDataset):
     # identities: 702 (train) + 702 (test)
     # tracklets: 2196 (train) + 2636 (test)
     """
-    dataset_dir = 'aictrack2-vidreid'
+    dataset_dir = '../'
 
     def __init__(self, root='data', min_seq_len=0, verbose=True, **kwargs):
-        self.dataset_dir = osp.join(root, self.dataset_dir)
+        self.dataset_dir = osp.join('', self.dataset_dir)
         self.dataset_url = 'http://vision.cs.duke.edu/DukeMTMC/data/misc/DukeMTMC-VideoReID.zip'
-        self.train_dir = osp.join(self.dataset_dir, '/media/twhuang/NewVolume1/aic19/aic19-track2-reid/image_train_deepreid')
+        self.train_dir = osp.join(self.dataset_dir, 'aic19-track2-reid/image_train_deepreid')
         #self.train_dir = osp.join(self.dataset_dir, '/media/twhuang/NewVolume1/aic19/aic19-track1-reid/track12_train/train')
-        self.query_dir = osp.join(self.dataset_dir, '/media/twhuang/NewVolume1/aic19/aic19-track2-reid/image_query_deepreid')
-        self.gallery_dir = osp.join(self.dataset_dir, '/media/twhuang/NewVolume1/aic19/aic19-track2-reid/image_test_deepreid')
+        self.query_dir = osp.join(self.dataset_dir, 'aic19-track2-reid/image_query_deepreid')
+        self.gallery_dir = osp.join(self.dataset_dir, 'aic19-track2-reid/image_test_deepreid')
         self.split_train_json_path = osp.join(self.dataset_dir, 'split_train.json')
         self.split_train_orig_json_path = osp.join(self.dataset_dir, 'split_train_orig.json')
         self.split_query_json_path = osp.join(self.dataset_dir, 'split_query.json')
@@ -250,9 +250,9 @@ class AICityTrack1(BaseVideoDataset):
         self.dataset_url = 'http://vision.cs.duke.edu/DukeMTMC/data/misc/DukeMTMC-VideoReID.zip'
         #self.train_dir = osp.join(self.dataset_dir, '/media/twhuang/NewVolume1/aic19/aic19-track1-reid/aic2019_track1_reid_train_unresized/train')
         #self.train_dir = osp.join(self.dataset_dir, '/media/twhuang/NewVolume1/aic19/aic19-track1-reid/track1_train_augment/train')
-        self.train_dir = osp.join(self.dataset_dir, '/media/twhuang/NewVolume1/aic19/aic19-track1-reid/track12_train/train')
-        self.query_dir = osp.join(self.dataset_dir, '/media/twhuang/NewVolume1/aic19/aic19-track1-reid/aic2019_track1_reid_test_unresized/image_query')
-        self.gallery_dir = osp.join(self.dataset_dir, '/media/twhuang/NewVolume1/aic19/aic19-track1-reid/aic2019_track1_reid_test_unresized/image_test')
+        self.train_dir = osp.join(self.dataset_dir, '../aic19-track1-reid/track12_train/train')
+        self.query_dir = osp.join(self.dataset_dir, '../aic19-track1-reid/aic2019_track1_reid_test_unresized/image_query')
+        self.gallery_dir = osp.join(self.dataset_dir, '../aic19-track1-reid/aic2019_track1_reid_test_unresized/image_test')
   
 
         self.split_train_json_path = osp.join(self.dataset_dir, 'split_train.json')

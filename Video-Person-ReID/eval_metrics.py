@@ -44,6 +44,7 @@ def evaluate_imgids(distmat, q_pids, g_pids, q_camids, g_camids, q_imgids, g_img
         max_rank = num_gi
         print("Note: number of gallery samples is quite small, got {}".format(num_gi))
     indices = np.argsort(distmat, axis=1)
+    print('\n', indices, '\n')
     # count gt and prediction (first imgid only)
     matches_gt_pred = {}
     for q_idx in range(num_q):
