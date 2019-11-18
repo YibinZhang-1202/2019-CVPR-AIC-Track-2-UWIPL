@@ -21,11 +21,12 @@ import models
 from models import resnet3d
 from losses import CrossEntropyLabelSmooth, TripletLoss, BatchSoft
 from utils import AverageMeter, Logger, save_checkpoint
-from eval_metrics import evaluate, evaluate_imgids, dump_matches_imgids, dump_query_result
+from eval_metrics import evaluate, evaluate_imgids, dump_matches_imgids, dump_query_result, evaluate_tracklets, dump_tracklet_result
 from samplers import RandomIdentitySampler
 
 from reidtools import visualize_ranked_results  # TH
-from re_ranking_metadata import cluster_gallery_soft, re_ranking_metadata_soft, re_ranking_metadata_soft_v2, re_ranking_metadata_soft_v3, compute_metadata_distance_hard, compute_KL_divergence, compute_pred, compute_confusion_weight_old, compute_confusion_weight
+from re_ranking_metadata import cluster_gallery_soft, re_ranking_metadata_soft, re_ranking_metadata_soft_v2, re_ranking_metadata_soft_v3, \
+    compute_metadata_distance_hard, compute_KL_divergence, compute_pred, compute_confusion_weight_old, compute_confusion_weight
 from scipy.spatial.distance import cdist
 import csv # TH for aggregate_log
 
@@ -788,7 +789,7 @@ def test_feature(aggregate_writer):
     print('g_metadatas.shape = ' + str(g_metadatas.shape))
 
     ranks=[1, 5, 10, 20]
-    return evaluate_feature(qf, gf, q_metadatas, g_metadatas, q_pids, g_pids, q_camids, g_camids, q_imgids, g_imgids, q_imgpaths, g_imgpaths, aggregate_writer, -1, ranks)
+    return evaluate_feature_tracklet(qf, gf, q_metadatas, g_metadatas, q_pids, g_pids, q_camids, g_camids, q_imgids, g_imgids, q_imgpaths, g_imgpaths, aggregate_writer, -1, ranks)
 
 def evaluate_feature(qf, gf, q_metadatas, g_metadatas, q_pids, g_pids, q_camids, g_camids, q_imgids, g_imgids, q_imgpaths, g_imgpaths, aggregate_writer, epoch, ranks):
     # metadata settings
@@ -880,41 +881,41 @@ def evaluate_feature(qf, gf, q_metadatas, g_metadatas, q_pids, g_pids, q_camids,
     #distmat += 1000 * compute_metadata_distance_hard(qf, gf, metadata_prob_ranges)
     ##########################################
 
-    # print('Before re-ranking')
-    # print("Computing CMC, mAP and matches_imgids - top 100")
-    # distmat = original_dist[0:query_num, query_num:all_num]
-    # cmc, mAP, matches_imgids, matches_imgids_FP, matches_gt_pred = evaluate_imgids(distmat, q_pids, g_pids, q_camids, g_camids, q_imgids, g_imgids, 50, 100)
-    # print("Results ----------")
-    # print("mAP: {:.1%}".format(mAP))
-    # print("CMC curve")
-    # for r in ranks:
-    #     print("Rank-{:<3}: {:.1%}".format(r, cmc[r - 1]))
-    # print("------------------")
-    # if aggregate_writer is not None:
-    #     aggregate_writer.writerow({'epoch': str(epoch+1), 'metadata_prob_ranges': '', 'k': str(k), 'lr': str(lr), 'niter': str(niter), 'r_metadata': '', 'k1': '', 'k2': '', 'lambda_value': '', 'mAP': str(mAP), 'Rank-1': str(cmc[0]), 'Rank-5': str(cmc[4]), 'Rank-10': str(cmc[9]), 'Rank-20': str(cmc[19])})
-    #
-    # # dump txt result
-    # dump_matches_imgids(osp.join(args.save_dir, 'dist_%04d' % (epoch + 1)), matches_imgids)
-    # dump_matches_imgids(osp.join(args.save_dir, 'dist_%04d_FP' % (epoch + 1)), matches_imgids_FP)
-    # dump_query_result(osp.join(args.save_dir, 'track2.txt_%04d' % (epoch + 1)), matches_imgids)
-    #
-    # # visualization
-    # if args.visualize_ranks:
-    #     tracklets_query = []
-    #     for i in range(len(q_imgpaths)):
-    #         img_paths = q_imgpaths[i]
-    #         pid = q_pids[i]
-    #         camid = q_camids[i]
-    #         tracklets_query.append((img_paths, pid, camid))
-    #     tracklets_gallery = []
-    #     for i in range(len(g_imgpaths)):
-    #         img_paths = g_imgpaths[i]
-    #         pid = g_pids[i]
-    #         camid = g_camids[i]
-    #         tracklets_query.append((img_paths, pid, camid))
-    #     visualize_ranked_results(
-    #         distmat, (tracklets_query, tracklets_gallery),
-    #         save_dir=osp.join(args.save_dir, 'ranked_results_%04d' % (epoch + 1)), topk=20)  # TH
+    print('Before re-ranking')
+    print("Computing CMC, mAP and matches_imgids - top 100")
+    distmat = original_dist[0:query_num, query_num:all_num]
+    cmc, mAP, matches_imgids, matches_imgids_FP, matches_gt_pred = evaluate_imgids(distmat, q_pids, g_pids, q_camids, g_camids, q_imgids, g_imgids, 50, 100)
+    print("Results ----------")
+    print("mAP: {:.1%}".format(mAP))
+    print("CMC curve")
+    for r in ranks:
+        print("Rank-{:<3}: {:.1%}".format(r, cmc[r - 1]))
+    print("------------------")
+    if aggregate_writer is not None:
+        aggregate_writer.writerow({'epoch': str(epoch+1), 'metadata_prob_ranges': '', 'k': str(k), 'lr': str(lr), 'niter': str(niter), 'r_metadata': '', 'k1': '', 'k2': '', 'lambda_value': '', 'mAP': str(mAP), 'Rank-1': str(cmc[0]), 'Rank-5': str(cmc[4]), 'Rank-10': str(cmc[9]), 'Rank-20': str(cmc[19])})
+
+    # dump txt result
+    dump_matches_imgids(osp.join(args.save_dir, 'dist_%04d' % (epoch + 1)), matches_imgids)
+    dump_matches_imgids(osp.join(args.save_dir, 'dist_%04d_FP' % (epoch + 1)), matches_imgids_FP)
+    dump_query_result(osp.join(args.save_dir, 'track2.txt_%04d' % (epoch + 1)), matches_imgids)
+
+    # visualization
+    if args.visualize_ranks:
+        tracklets_query = []
+        for i in range(len(q_imgpaths)):
+            img_paths = q_imgpaths[i]
+            pid = q_pids[i]
+            camid = q_camids[i]
+            tracklets_query.append((img_paths, pid, camid))
+        tracklets_gallery = []
+        for i in range(len(g_imgpaths)):
+            img_paths = g_imgpaths[i]
+            pid = g_pids[i]
+            camid = g_camids[i]
+            tracklets_query.append((img_paths, pid, camid))
+        visualize_ranked_results(
+            distmat, (tracklets_query, tracklets_gallery),
+            save_dir=osp.join(args.save_dir, 'ranked_results_%04d' % (epoch + 1)), topk=20)  # TH
 
     # re-ranking
     if args.re_ranking and args.metadata_model:
@@ -973,7 +974,7 @@ def evaluate_feature(qf, gf, q_metadatas, g_metadatas, q_pids, g_pids, q_camids,
                             print('\n')
                             print('and the correspondding cmc[0] is: ', cmc[0])
                             with open(osp.join(args.save_dir, 'myMAPLog'), 'a') as fMAP:
-                                fMAP.write('max_mAP is: ' + str(max_mAP) + ' correspondding cmc[0] is: ' + str(cmc[0]) + 
+                                fMAP.write('max_mAP is: ' + str(max_mAP) + ' correspondding cmc[0] is: ' + str(cmc[0]) +
                                         ' the parameters are: [k1 = ' + str(k1) + ' k2 = ' + str(k2) + ' lambda_value = ' + str(lambda_value) + ']' )
                                 fMAP.write('\n')
                         f.write('k1 = '+str(k1) + ' k2 = ' + str(k2) + ' lambda_value = ' + str(lambda_value))
@@ -985,7 +986,7 @@ def evaluate_feature(qf, gf, q_metadatas, g_metadatas, q_pids, g_pids, q_camids,
                         dump_matches_imgids(osp.join(args.save_dir, 'dist_rerank-%d-%d-%.2f_%04d' % (k1, k2, lambda_value, epoch + 1)), matches_imgids)
                         dump_matches_imgids(osp.join(args.save_dir, 'dist_rerank-%d-%d-%.2f_%04d_FP' % (k1, k2, lambda_value, epoch + 1)), matches_imgids_FP)
                         dump_query_result(osp.join(args.save_dir, 'track2.txt-%d-%d-%.2f_%04d' % (k1, k2, lambda_value, epoch + 1)), matches_imgids)
-        
+
         print("------------------")
         print('\n')
         print('\n')
@@ -997,6 +998,229 @@ def evaluate_feature(qf, gf, q_metadatas, g_metadatas, q_pids, g_pids, q_camids,
     return cmc[0]
 
 
+def evaluate_feature_tracklet(qf, gf, q_metadatas, g_metadatas, q_pids, g_pids, q_camids, g_camids, q_imgids, g_imgids, q_imgpaths, g_imgpaths, aggregate_writer, epoch, ranks):
+    # metadata settings
+    if args.metadata_model:
+        # confusion_mats_obj = np.load('./metadata/cm_%s.npy'%args.metadata_model, encoding='latin1')
+        confusion_file = './metadata/cm_%s_normalized.npy' % args.metadata_model
+        confusion_mats_obj = np.load(confusion_file, encoding='latin1', allow_pickle=True)
+        if args.metadata_model[:2] == 'v1':
+            default_metadata_prob_ranges = [(0, 6), (6, 18), (18, 26)]
+            confusion_mats = dict()
+            for i, prob_range in enumerate(default_metadata_prob_ranges):
+                confusion_mats[prob_range] = confusion_mats_obj[i]
+        elif args.metadata_model[:2] == 'v2':
+            default_metadata_prob_ranges = [(0, 7), (7, 37), (37, 46)]
+            confusion_mats = dict()
+            for i, prob_range in enumerate(default_metadata_prob_ranges):
+                confusion_mats[prob_range] = confusion_mats_obj[i]
+        else:
+            print('invalid metadata_model, should be v1xx or v2xx but found %s' % args.metadata_model)
+            import sys
+            sys.exit()
+
+        metas = args.metas.split(',')
+        metas = [int(m) for m in metas if len(m) > 0]
+        print('metas: ' + str(metas))
+        metadata_prob_ranges = []
+        for im in range(len(default_metadata_prob_ranges)):
+            if im in metas:
+                metadata_prob_ranges.append(default_metadata_prob_ranges[im])
+        print('metadata_prob_ranges: ' + str(metadata_prob_ranges))
+
+    if args.cluster_gallery and args.metadata_model:
+        k, lr, niter = 5, 0.5, 9
+        print('apply cluster gallery')
+        print('(k, lr, niter): (%d, %f, %d)' % (k, lr, niter))
+        gf = cluster_gallery_soft(gf, g_metadatas, metadata_prob_ranges, k, lr, niter)
+    else:
+        k, lr, niter = -1, -1, -1
+
+    # compute original distance
+    print('computing original distance')
+    query_num = qf.shape[0]
+    gallery_num = gf.shape[0]
+    all_num = query_num + gallery_num
+    feat = np.append(qf, gf, axis=0)
+    all_metadatas = np.append(q_metadatas, g_metadatas, axis=0)
+    feat = feat.astype(np.float16)
+    MemorySave = False
+    if MemorySave:
+        original_dist = np.zeros(shape=[all_num, all_num], dtype=np.float16)
+        i = 0
+        while True:
+            it = i + Minibatch
+            if it < np.shape(feat)[0]:
+                original_dist[i:it, ] = np.power(cdist(feat[i:it, ], feat), 2).astype(np.float16)
+            else:
+                original_dist[i:, :] = np.power(cdist(feat[i:, ], feat), 2).astype(np.float16)
+                break
+            i = it
+    else:
+        original_dist = cdist(feat, feat).astype(np.float16)
+        original_dist = np.power(original_dist, 2).astype(np.float16)
+    del feat
+
+    # apply meta data
+    m_num = len(metadata_prob_ranges)
+    for p_begin, p_end in metadata_prob_ranges:
+        assert (p_begin, p_end) in confusion_mats
+
+    conf_pred = np.ones((all_num, all_num, m_num), dtype=np.float32)
+    use_KL = False
+    if use_KL:
+        print('computing KL divergence')
+        KL_div_U = compute_KL_divergence(all_metadatas, np.ones(all_metadatas.shape, dtype=np.float32),
+                                         metadata_prob_ranges)
+        for im, (p_begin, p_end) in enumerate(metadata_prob_ranges):
+            conf_pred[:, :, im] = KL_div_U[:, :, im] * np.transpose(KL_div_U[:, :, im]) / (
+                        np.log(p_end - p_begin) * np.log(p_end - p_begin))
+    pred = compute_pred(all_metadatas, metadata_prob_ranges)
+    confusion_dist = np.zeros((all_num, all_num, m_num), dtype=np.float32)
+    for im, (p_begin, p_end) in enumerate(metadata_prob_ranges):
+        confusion_weight = compute_confusion_weight(pred[:, im], pred[:, im], confusion_mats[(p_begin, p_end)])
+        confusion_dist[:, :, im] = -np.log(confusion_weight + 1e-4) / np.log(p_end - p_begin)
+    metadata_dist = conf_pred * confusion_dist
+    metadata_dist = np.sum(metadata_dist, axis=2)
+
+    ###################################################3
+    # distmat += 1000 * compute_metadata_distance_hard(qf, gf, metadata_prob_ranges)
+    ##########################################
+
+    # print('Before re-ranking')
+    # print("Computing CMC, mAP and matches_imgids - top 100")
+    # distmat = original_dist[0:query_num, query_num:all_num]
+    # cmc, mAP, matches_imgids, matches_imgids_FP, matches_gt_pred = evaluate_imgids(distmat, q_pids, g_pids, q_camids, g_camids, q_imgids, g_imgids, 50, 100)
+    # print("Results ----------")
+    # print("mAP: {:.1%}".format(mAP))
+    # print("CMC curve")
+    # for r in ranks:
+    #     print("Rank-{:<3}: {:.1%}".format(r, cmc[r - 1]))
+    # print("------------------")
+    # if aggregate_writer is not None:
+    #     aggregate_writer.writerow(
+    #         {'epoch': str(epoch + 1), 'metadata_prob_ranges': '', 'k': str(k), 'lr': str(lr), 'niter': str(niter),
+    #          'r_metadata': '', 'k1': '', 'k2': '', 'lambda_value': '', 'mAP': str(mAP), 'Rank-1': str(cmc[0]),
+    #          'Rank-5': str(cmc[4]), 'Rank-10': str(cmc[9]), 'Rank-20': str(cmc[19])})
+    #
+    # # dump txt result
+    # dump_matches_imgids(osp.join(args.save_dir, 'dist_%04d' % (epoch + 1)), matches_imgids)
+    # dump_matches_imgids(osp.join(args.save_dir, 'dist_%04d_FP' % (epoch + 1)), matches_imgids_FP)
+    # dump_query_result(osp.join(args.save_dir, 'track2.txt_%04d' % (epoch + 1)), matches_imgids)
+    #
+    # # visualization
+    # if args.visualize_ranks:
+    #     tracklets_query = []
+    #     for i in range(len(q_imgpaths)):
+    #         img_paths = q_imgpaths[i]
+    #         pid = q_pids[i]
+    #         camid = q_camids[i]
+    #         tracklets_query.append((img_paths, pid, camid))
+    #     tracklets_gallery = []
+    #     for i in range(len(g_imgpaths)):
+    #         img_paths = g_imgpaths[i]
+    #         pid = g_pids[i]
+    #         camid = g_camids[i]
+    #         tracklets_query.append((img_paths, pid, camid))
+    #     visualize_ranked_results(
+    #         distmat, (tracklets_query, tracklets_gallery),
+    #         save_dir=osp.join(args.save_dir, 'ranked_results_%04d' % (epoch + 1)), topk=20)  # TH
+
+    # re - ranking
+    if args.re_ranking and args.metadata_model:
+        # zhangping doing re-rank
+
+        print('Run re-ranking')
+
+        max_mAP = 0
+
+        fMAP = open(osp.join(args.save_dir, 'myMAPLog'), 'w')
+        fMAP.close()
+
+        f = open(osp.join(args.save_dir, 'myLog'), 'w')
+
+        # for k1 in range(4,32,2):
+        # for k1 in range(2,32,1):
+        for k1 in range(4, 5, 1):
+            for k2 in range(4, k1 + 1, 1):
+                # for lambda_value in np.arange(0.2,1.1,0.1):
+                for lambda_value in np.arange(0.5, 0.6, 0.1):
+                    # r_metadata = 10.0
+                    # r_metadatas = [0.001, 0.002, 0.005, 0.01, 0.02]
+                    # for r_metadata in np.arange(20, 21, 1):
+                    for r_metadata in np.arange(0.2, 0.21, 0.01):
+                        # for r_metadata in np.arange(0.01, 0.51, 0.01):
+                        # for r_metadata in r_metadatas:
+                        print('now try different k1, k2 and lambda_value')
+                        print('k1 = ', k1)
+                        print('k2 = ', k2)
+                        print('lambda_value = ', lambda_value)
+                        print('r_metadata = ', r_metadata)
+
+                        # final_dist = re_ranking_metadata_soft(qf, gf, q_metadatas, g_metadatas, metadata_prob_ranges, k1, k2, lambda_value)
+                        # final_dist = re_ranking_metadata_soft_v2(qf, gf, q_metadatas, g_metadatas, confusion_mats, metadata_prob_ranges, k1, k2, lambda_value)
+                        final_dist = re_ranking_metadata_soft_v3(original_dist, metadata_dist, query_num, all_num, r_metadata, k1, k2, lambda_value)
+                        print('after re-ranking, the final_dist.shape is: ', final_dist.shape)
+                        # ping evaluate after re-ranking
+                        # print("Computing CMC and mAP after re-ranking")
+                        # final_dist = [qg], instead of [[qq,qg],[gq,gg]]
+                        # cmc, mAP = evaluate(final_dist, q_pids, g_pids, q_camids, g_camids)
+                        # print("Computing CMC, mAP and matches_imgids after re-ranking - top 100")
+
+                        # cmc, mAP, matches_imgids, matches_imgids_FP, matches_gt_pred = evaluate_imgids(final_dist, q_pids, g_pids, q_camids, g_camids, q_imgids, g_imgids, 50, 100)
+                        tracklets = evaluate_tracklets(final_dist, q_pids, g_pids, q_camids, g_camids, q_imgids, g_imgids, 50, 100)
+
+                        dump_tracklet_result(osp.join(args.save_dir, 'tracklet_rerank-%d-%d-%.2f_%04d' % (k1, k2, lambda_value, epoch + 1)), tracklets)
+                        # print("after re-ranking Results ----------")
+                        # print("after re-ranking: mAP: {:.1%}".format(mAP))
+                        # print("after re-ranking: CMC curve")
+                        # for r in ranks:
+                        #     print("after re-ranking: Rank-{:<3}: {:.1%}".format(r, cmc[r - 1]))
+                        # print("------------------")
+                        # if aggregate_writer is not None:
+                        #     aggregate_writer.writerow({'epoch': str(epoch + 1), 'metadata_prob_ranges': ';'.join(
+                        #         [(str(rb) + '-' + str(re)) for rb, re in metadata_prob_ranges]), 'k': str(k),
+                        #                                'lr': str(lr), 'niter': str(niter),
+                        #                                'r_metadata': str(r_metadata), 'k1': str(k1), 'k2': str(k2),
+                        #                                'lambda_value': str(lambda_value), 'mAP': str(mAP),
+                        #                                'Rank-1': str(cmc[0]), 'Rank-5': str(cmc[4]),
+                        #                                'Rank-10': str(cmc[9]), 'Rank-20': str(cmc[19])})
+                        # if mAP - max_mAP > 0:
+                        #     max_mAP = mAP
+                        #     print('new max_mAP')
+                        #     print('\n')
+                        #     print('right now the max_mAP is: ', max_mAP)
+                        #     print('\n')
+                        #     print('and the correspondding cmc[0] is: ', cmc[0])
+                        #     with open(osp.join(args.save_dir, 'myMAPLog'), 'a') as fMAP:
+                        #         fMAP.write('max_mAP is: ' + str(max_mAP) + ' correspondding cmc[0] is: ' + str(cmc[0]) +
+                        #                    ' the parameters are: [k1 = ' + str(k1) + ' k2 = ' + str(
+                        #             k2) + ' lambda_value = ' + str(lambda_value) + ']')
+                        #         fMAP.write('\n')
+                        # f.write('k1 = ' + str(k1) + ' k2 = ' + str(k2) + ' lambda_value = ' + str(lambda_value))
+                        # f.write('\n')
+                        # f.write('mAP = ' + str(mAP) + ' CMC[0] = ' + str(cmc[0]))
+                        # f.write('\n')
+
+                        # dump txt result
+                        # dump_matches_imgids(
+                        #     osp.join(args.save_dir, 'dist_rerank-%d-%d-%.2f_%04d' % (k1, k2, lambda_value, epoch + 1)),
+                        #     matches_imgids)
+                        # dump_matches_imgids(osp.join(args.save_dir, 'dist_rerank-%d-%d-%.2f_%04d_FP' % (
+                        # k1, k2, lambda_value, epoch + 1)), matches_imgids_FP)
+                        # dump_query_result(
+                        #     osp.join(args.save_dir, 'track2.txt-%d-%d-%.2f_%04d' % (k1, k2, lambda_value, epoch + 1)),
+                        #     matches_imgids)
+
+        # print("------------------")
+        # print('\n')
+        # print('\n')
+        # print('overall the max_mAP is: ', max_mAP)
+        # print('\n')
+
+        f.close()
+
+    # return cmc[0]
 
 
 if __name__ == '__main__':

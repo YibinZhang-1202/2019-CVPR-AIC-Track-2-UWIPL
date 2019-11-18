@@ -13,4 +13,6 @@ python main_video_person_reid.py \
     --save-dir log-test \
     --gpu-devices 1 \
     --re-ranking \
-    --metadata-model v2m100
+    --metadata-model v2m100 \
+    --load-feature \
+    --feature-dir log-test/feature_ep0300
