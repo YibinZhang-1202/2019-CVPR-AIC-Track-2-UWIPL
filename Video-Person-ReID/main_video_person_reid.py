@@ -741,7 +741,7 @@ def test(model, queryloader, galleryloader, pool, use_gpu, dataset, epoch, ranks
     if args.feature_only:
         return 0
 
-    return evaluate_feature(qf, gf, q_metadatas, g_metadatas, q_pids, g_pids, q_camids, g_camids, q_imgids, g_imgids, q_imgpaths, g_imgpaths, aggregate_writer, epoch, ranks)
+    return evaluate_feature_tracklet(qf, gf, q_metadatas, g_metadatas, q_pids, g_pids, q_camids, g_camids, q_imgids, g_imgids, q_imgpaths, g_imgpaths, aggregate_writer, epoch, ranks)
 
 def test_feature(aggregate_writer):
     # read pids, camids, imgids, feature and metadata from file

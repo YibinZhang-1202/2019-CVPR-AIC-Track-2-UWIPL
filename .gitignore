@@ -5,6 +5,6 @@ CarKeypoints/keypoint-test.txt
 CarKeypoints/keypoint-train.txt
 Video-Person-ReID/log-test
 Video-Person-ReID/log
-venv/
+env/
 
 
